@@ -23,7 +23,10 @@ services:
       HH_USER_AGENT: ${HH_USER_AGENT}
       HH_AUTONOMY_ENABLED: ${HH_AUTONOMY_ENABLED}
       HH_API_VERIFIED: ${HH_API_VERIFIED}
+      HH_API_APPLY_UNAVAILABLE: ${HH_API_APPLY_UNAVAILABLE:-false}
       HH_DAILY_LIMIT: ${HH_DAILY_LIMIT}
+      BROWSER_ENABLED: ${BROWSER_ENABLED:-true}
+      HH_BROWSER_WRITES_VERIFIED: ${HH_BROWSER_WRITES_VERIFIED:-false}
       MODEL_API_URL: ${MODEL_API_URL}
       MODEL_API_KEY: ${MODEL_API_KEY}
       MODEL_NAME: ${MODEL_NAME}
@@ -32,6 +35,7 @@ services:
         condition: service_healthy
     volumes:
       - ./vault:/app/vault
+      - ./browser_profile:/app/browser_profile
     ports:
       - "127.0.0.1:8000:8000"
     restart: unless-stopped

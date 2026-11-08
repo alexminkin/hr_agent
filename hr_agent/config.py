@@ -12,7 +12,11 @@ class Settings(BaseSettings):
     hh_user_agent: str = ""
     hh_autonomy_enabled: bool = False
     hh_api_verified: bool = False
+    hh_api_apply_unavailable: bool = False
     hh_daily_limit: int = 200
+    browser_enabled: bool = True
+    hh_browser_writes_verified: bool = False
+    browser_state_path: str = "/app/browser_profile/storage_state.json"
     model_api_url: str = ""
     model_api_key: str = ""
     model_name: str = ""

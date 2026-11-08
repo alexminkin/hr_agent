@@ -76,6 +76,27 @@ class Application(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
+class JobAttempt(Base):
+    __tablename__ = "job_attempts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id"))
+    operation: Mapped[str] = mapped_column(String(32))
+    channel: Mapped[str | None] = mapped_column(String(16))
+    state: Mapped[str] = mapped_column(String(32))
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    __table_args__ = (UniqueConstraint("application_id", "state", name="uq_notification_application_state"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id"))
+    state: Mapped[str] = mapped_column(String(32))
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Message(Base):
     __tablename__ = "messages"
     id: Mapped[int] = mapped_column(primary_key=True)

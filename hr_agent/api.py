@@ -6,9 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .applications import dispatch_one
+from .browser import BrowserNeedsReview, BrowserUnavailable
 from .config import settings
 from .db import AuditEvent, SessionLocal, Setting, Vacancy, init_db
-from .hh import HHClient
+from .routing import HHOperationRouter, OperationBlocked
 
 
 @asynccontextmanager
@@ -44,14 +45,18 @@ def health():
 def search(request: SearchRequest, db: Session = Depends(session)):
     if not 1 <= request.pages <= 20:
         raise HTTPException(400, "pages out of range")
-    hh = HHClient()
+    hh = HHOperationRouter()
     count = 0
     for page in range(request.pages):
-        for row in hh.search(request.text, page).get("items", []):
+        try:
+            items = hh.search(request.text, page).get("items", [])
+        except (OperationBlocked, BrowserNeedsReview, BrowserUnavailable) as exc:
+            raise HTTPException(503, str(exc)) from exc
+        for row in items:
             hh_id = str(row["id"])
             if db.scalar(select(Vacancy).where(Vacancy.hh_id == hh_id)):
                 continue
-            db.add(Vacancy(hh_id=hh_id, title=row["name"], url=row["alternate_url"], raw=row))
+            db.add(Vacancy(hh_id=hh_id, title=row["name"], url=row["alternate_url"], raw={**row, "source_channel": hh.last_channel}))
             count += 1
     db.commit()
     return {"new_vacancies": count}
@@ -59,7 +64,7 @@ def search(request: SearchRequest, db: Session = Depends(session)):
 
 @app.post("/dispatch", dependencies=[Depends(authorized)])
 def dispatch(db: Session = Depends(session)):
-    return dispatch_one(db, HHClient())
+    return dispatch_one(db, HHOperationRouter())
 
 
 @app.post("/pause", dependencies=[Depends(authorized)])

@@ -6,9 +6,14 @@ from .config import settings
 
 class HHClient:
     def __init__(self):
+        headers = {}
+        if settings.hh_access_token:
+            headers["Authorization"] = f"Bearer {settings.hh_access_token}"
+        if settings.hh_user_agent:
+            headers["HH-User-Agent"] = settings.hh_user_agent
         self.client = httpx.Client(
             base_url="https://api.hh.ru",
-            headers={"Authorization": f"Bearer {settings.hh_access_token}", "HH-User-Agent": settings.hh_user_agent},
+            headers=headers,
             timeout=20,
         )
 
@@ -23,9 +28,18 @@ class HHClient:
         return response.json()
 
     def applicant_negotiations(self) -> list[dict]:
-        response = self.client.get("/negotiations", params={"per_page": 100})
-        response.raise_for_status()
-        return response.json().get("items", [])
+        items = []
+        page = 0
+        while True:
+            response = self.client.get("/negotiations", params={"per_page": 100, "page": page})
+            response.raise_for_status()
+            payload = response.json()
+            if "items" not in payload or "pages" not in payload:
+                raise RuntimeError("HH negotiation response cannot prove absence of an application")
+            items.extend(payload["items"])
+            page += 1
+            if page >= payload["pages"]:
+                return items
 
     def find_application(self, vacancy_id: str, resume_id: str) -> dict | None:
         for item in self.applicant_negotiations():

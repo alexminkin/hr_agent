@@ -1,0 +1,7 @@
+.env
+.git
+browser_profile/
+vault/
+__pycache__/
+.pytest_cache/
+*.pyc
