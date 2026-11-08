@@ -1,0 +1,29 @@
+{
+  "name": "HR Autonomous Application Dispatch",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 1}]}},
+      "id": "dispatch-schedule",
+      "name": "Every Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://core:8000/dispatch",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "x-admin-token", "value": "={{ $env.APP_ADMIN_TOKEN }}"}]}
+      },
+      "id": "dispatch-api",
+      "name": "Dispatch One",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    }
+  ],
+  "connections": {"Every Minute": {"main": [[{"node": "Dispatch One", "type": "main", "index": 0}]]}},
+  "settings": {"timezone": "Europe/Moscow"},
+  "active": false
+}

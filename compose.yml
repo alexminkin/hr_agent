@@ -1,0 +1,74 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: hr
+      POSTGRES_USER: hr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hr -d hr"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+  core:
+    build: .
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      APP_ADMIN_TOKEN: ${APP_ADMIN_TOKEN}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_USER_ID: ${TELEGRAM_USER_ID}
+      HH_ACCESS_TOKEN: ${HH_ACCESS_TOKEN}
+      HH_USER_AGENT: ${HH_USER_AGENT}
+      HH_AUTONOMY_ENABLED: ${HH_AUTONOMY_ENABLED}
+      HH_API_VERIFIED: ${HH_API_VERIFIED}
+      HH_DAILY_LIMIT: ${HH_DAILY_LIMIT}
+      MODEL_API_URL: ${MODEL_API_URL}
+      MODEL_API_KEY: ${MODEL_API_KEY}
+      MODEL_NAME: ${MODEL_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./vault:/app/vault
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+  bot:
+    build: .
+    command: ["python", "-m", "hr_agent.bot"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_USER_ID: ${TELEGRAM_USER_ID}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.46.5
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: hr
+      DB_POSTGRESDB_USER: hr
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      APP_ADMIN_TOKEN: ${APP_ADMIN_TOKEN}
+      GENERIC_TIMEZONE: Europe/Moscow
+      TZ: Europe/Moscow
+      N8N_HOST: localhost
+      N8N_PROTOCOL: http
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+volumes:
+  pg_data:
+  n8n_data:

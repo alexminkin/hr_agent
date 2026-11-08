@@ -1,0 +1,32 @@
+{
+  "name": "HR Morning Vacancy Search",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"field": "cronExpression", "expression": "0 8 * * *"}]}},
+      "id": "morning-schedule",
+      "name": "08:00 Moscow",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://core:8000/search",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "x-admin-token", "value": "={{ $env.APP_ADMIN_TOKEN }}"}]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"text\":\"Python developer\",\"pages\":2}"
+      },
+      "id": "search-api",
+      "name": "Search HH",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    }
+  ],
+  "connections": {"08:00 Moscow": {"main": [[{"node": "Search HH", "type": "main", "index": 0}]]}},
+  "settings": {"timezone": "Europe/Moscow"},
+  "active": false
+}
