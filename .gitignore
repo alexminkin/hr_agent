@@ -5,4 +5,5 @@ __pycache__/
 vault/
 browser_profile/
 backups/
+knowledge_example/
 *.pyc
